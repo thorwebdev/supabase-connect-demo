@@ -11,7 +11,7 @@ const oauth2Client = new OAuth2Client({
   clientSecret: Deno.env.get("SUPA_CONNECT_CLIENT_SECRET")!,
   authorizationEndpointUri: "https://api.supabase.com/v1/oauth/authorize",
   tokenUri: "https://api.supabase.com/v1/oauth/token",
-  redirectUri: "http://localhost:8000/oauth2/callback",
+  redirectUri: "https://supabase-connect-demo.deno.dev/oauth2/callback",
   defaults: {
     scope: "all",
   },
