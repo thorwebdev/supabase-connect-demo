@@ -11,8 +11,7 @@ const oauth2Client = new OAuth2Client({
   clientSecret: Deno.env.get("SUPA_CONNECT_CLIENT_SECRET")!,
   authorizationEndpointUri: "https://api.supabase.green/v1/oauth/authorize",
   tokenUri: "https://api.supabase.green/v1/oauth/token",
-  redirectUri:
-    "https://bljghubhkofddfrezkhn.supabase.co/functions/v1/supabase-connect/oauth2/callback",
+  redirectUri: "http://localhost:8000/oauth2/callback",
   defaults: {
     scope: "all",
   },
@@ -24,11 +23,11 @@ type AppState = {
 
 const router = new Router<AppState>();
 // Note: path should be prefixed with function name
-router.get("/supabase-connect", (ctx) => {
+router.get("/", (ctx) => {
   ctx.response.body =
-    "This is an example of implementing https://supabase.com/docs/guides/integrations/oauth-apps/authorize-an-oauth-app . Navigate to /supabase-connect/login to start the OAuth flow.";
+    "This is an example of implementing https://supabase.com/docs/guides/integrations/oauth-apps/authorize-an-oauth-app . Navigate to /login to start the OAuth flow.";
 });
-router.get("/supabase-connect/login", async (ctx) => {
+router.get("/login", async (ctx) => {
   // Construct the URL for the authorization redirect and get a PKCE codeVerifier
   const { uri, codeVerifier } = await oauth2Client.code.getAuthorizationUri();
   console.log({ uri, codeVerifier });
@@ -39,7 +38,7 @@ router.get("/supabase-connect/login", async (ctx) => {
   // Redirect the user to the authorization endpoint
   ctx.response.redirect(uri);
 });
-router.get("/supabase-connect/oauth2/callback", async (ctx) => {
+router.get("/oauth2/callback", async (ctx) => {
   // Make sure the codeVerifier is present for the user's session
   const codeVerifier = ctx.state.session.get("codeVerifier") as string;
   console.log("codeVerifier", codeVerifier);
@@ -70,6 +69,5 @@ const store = new CookieStore("very-secret-key");
 app.use(Session.initMiddleware(store));
 app.use(router.routes());
 app.use(router.allowedMethods());
-
-await app.listen({ port: 8000 });
 console.log("Listening on http://localhost:8000");
+await app.listen({ port: 8000 });
