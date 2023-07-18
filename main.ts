@@ -9,8 +9,8 @@ import { OAuth2Client } from "https://deno.land/x/oauth2_client@v1.0.2/mod.ts";
 const oauth2Client = new OAuth2Client({
   clientId: Deno.env.get("SUPA_CONNECT_CLIENT_ID")!,
   clientSecret: Deno.env.get("SUPA_CONNECT_CLIENT_SECRET")!,
-  authorizationEndpointUri: "https://api.supabase.green/v1/oauth/authorize",
-  tokenUri: "https://api.supabase.green/v1/oauth/token",
+  authorizationEndpointUri: "https://api.supabase.com/v1/oauth/authorize",
+  tokenUri: "https://api.supabase.com/v1/oauth/token",
   redirectUri: "http://localhost:8000/oauth2/callback",
   defaults: {
     scope: "all",

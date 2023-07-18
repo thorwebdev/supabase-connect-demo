@@ -1,6 +1,6 @@
-# REST API
+# Supabase Marketplace App OAuth Example
 
-A template of REST API app using Oak framework
+https://supabase.com/docs/guides/integrations/oauth-apps/authorize-an-oauth-app
 
 Start the server with the command:
 
@@ -8,4 +8,4 @@ Start the server with the command:
 deno run --allow-net --allow-env --allow-read main.ts
 ```
 
-This starts the server at http://localhost:8000/
+Start the OAuth (Sign in With Supabase) flow: http://localhost:8000/login
