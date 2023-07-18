@@ -24,6 +24,7 @@ type AppState = {
 const router = new Router<AppState>();
 // Note: path should be prefixed with function name
 router.get("/", (ctx) => {
+  ctx.cookies.set("thors_little_hacker_test", "test", { domain: "deno.dev" });
   ctx.response.body =
     "This is an example of implementing https://supabase.com/docs/guides/integrations/oauth-apps/authorize-an-oauth-app . Navigate to /login to start the OAuth flow.";
 });
