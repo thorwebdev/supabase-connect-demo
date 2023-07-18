@@ -1,31 +1,75 @@
+import "https://deno.land/std@0.194.0/dotenv/load.ts";
 import { Application, Router } from "https://deno.land/x/oak@v11.1.0/mod.ts";
-import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
-import data from "./data.json" assert { type: "json" };
+import {
+  Session,
+  CookieStore,
+} from "https://deno.land/x/oak_sessions@v4.1.9/mod.ts";
+import { OAuth2Client } from "https://deno.land/x/oauth2_client@v1.0.2/mod.ts";
 
-const router = new Router();
-router
-  .get("/", (context) => {
-    context.response.body = "Welcome to dinosaur API!";
-  })
-  .get("/api", (context) => {
-    context.response.body = data;
-  })
-  .get("/api/:dinosaur", (context) => {
-    if (context?.params?.dinosaur) {
-      const found = data.find((item) =>
-        item.name.toLowerCase() === context.params.dinosaur.toLowerCase()
-      );
-      if (found) {
-        context.response.body = found;
-      } else {
-        context.response.body = "No dinosaurs found.";
-      }
-    }
+const oauth2Client = new OAuth2Client({
+  clientId: Deno.env.get("SUPA_CONNECT_CLIENT_ID")!,
+  clientSecret: Deno.env.get("SUPA_CONNECT_CLIENT_SECRET")!,
+  authorizationEndpointUri: "https://api.supabase.green/v1/oauth/authorize",
+  tokenUri: "https://api.supabase.green/v1/oauth/token",
+  redirectUri:
+    "https://bljghubhkofddfrezkhn.supabase.co/functions/v1/supabase-connect/oauth2/callback",
+  defaults: {
+    scope: "all",
+  },
+});
+
+type AppState = {
+  session: Session;
+};
+
+const router = new Router<AppState>();
+// Note: path should be prefixed with function name
+router.get("/supabase-connect", (ctx) => {
+  ctx.response.body =
+    "This is an example of implementing https://supabase.com/docs/guides/integrations/oauth-apps/authorize-an-oauth-app . Navigate to /supabase-connect/login to start the OAuth flow.";
+});
+router.get("/supabase-connect/login", async (ctx) => {
+  // Construct the URL for the authorization redirect and get a PKCE codeVerifier
+  const { uri, codeVerifier } = await oauth2Client.code.getAuthorizationUri();
+  console.log({ uri, codeVerifier });
+
+  // Store both the state and codeVerifier in the user session
+  ctx.state.session.flash("codeVerifier", codeVerifier);
+
+  // Redirect the user to the authorization endpoint
+  ctx.response.redirect(uri);
+});
+router.get("/supabase-connect/oauth2/callback", async (ctx) => {
+  // Make sure the codeVerifier is present for the user's session
+  const codeVerifier = ctx.state.session.get("codeVerifier") as string;
+  console.log("codeVerifier", codeVerifier);
+
+  // Exchange the authorization code for an access token
+  const tokens = await oauth2Client.code.getToken(ctx.request.url, {
+    codeVerifier,
   });
+  console.log("tokens", tokens);
+  // Make sure to store the tokens in your DB
 
-const app = new Application();
-app.use(oakCors()); // Enable CORS for All Routes
+  // Use the access token to make an authenticated API request
+  const projects = await fetch("https://api.supabase.com/v1/projects", {
+    headers: {
+      Authorization: `Bearer ${tokens.accessToken}`,
+    },
+  }).then((res) => res.json());
+
+  ctx.response.body = `Hello, these are your projects ${JSON.stringify(
+    projects
+  )}!`;
+});
+
+const app = new Application<AppState>();
+// cookie name for the store is configurable, default is: {sessionDataCookieName: 'session_data'}
+const store = new CookieStore("very-secret-key");
+// @ts-ignore TODO: open issue at https://github.com/jcs224/oak_sessions
+app.use(Session.initMiddleware(store));
 app.use(router.routes());
 app.use(router.allowedMethods());
 
 await app.listen({ port: 8000 });
+console.log("Listening on http://localhost:8000");
